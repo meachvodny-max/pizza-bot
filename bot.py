@@ -100,11 +100,14 @@ async def call_operator(message: Message, state: FSMContext):
         reply_markup=operator_keyboard()
     )
     user = message.from_user
-    await bot.send_message(
-        OPERATOR_ID,
-        f"🔔 Клиент подключился к оператору\n"
-        f"Имя: {user.full_name}\nUsername: @{user.username}\nID клиента: {user.id}"
-    )
+    try:
+        await bot.send_message(
+            OPERATOR_ID,
+            f"🔔 Клиент подключился к оператору\n"
+            f"Имя: {user.full_name}\nUsername: @{user.username}\nID клиента: {user.id}"
+        )
+    except Exception as e:
+        await message.answer(f"⚠️ Не удалось уведомить оператора: {e}")
 
 
 # === СООБЩЕНИЯ КЛИЕНТА В РЕЖИМЕ ОПЕРАТОРА ===
@@ -115,13 +118,16 @@ async def client_in_operator_mode(message: Message, state: FSMContext):
         await message.answer("Диалог с оператором завершён. Снова отвечает бот 🤖", reply_markup=main_keyboard())
         return
     user = message.from_user
-    await bot.send_message(
-        OPERATOR_ID,
-        f"💬 Сообщение от клиента\n"
-        f"Имя: {user.full_name}\nUsername: @{user.username}\nID клиента: {user.id}\n\n"
-        f"Текст: {message.text}"
-    )
-    await message.answer("Сообщение передано оператору ✅")
+    try:
+        await bot.send_message(
+            OPERATOR_ID,
+            f"💬 Сообщение от клиента\n"
+            f"Имя: {user.full_name}\nUsername: @{user.username}\nID клиента: {user.id}\n\n"
+            f"Текст: {message.text}"
+        )
+        await message.answer("Сообщение передано оператору ✅")
+    except Exception as e:
+        await message.answer(f"⚠️ Не удалось отправить оператору: {e}")
 
 
 # === ЗАКАЗ ПИЦЦЫ ===
