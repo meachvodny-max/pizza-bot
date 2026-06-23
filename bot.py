@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.base import StorageKey
-from google import genai
+from openai import OpenAI
 
 TOKEN = os.environ["TOKEN"]
 GEMINI_KEY = os.environ["GEMINI_KEY"]
@@ -16,7 +16,10 @@ OPERATOR_ID = int(os.environ["OPERATOR_ID"])
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-client = genai.Client(api_key=GEMINI_KEY)
+client = OpenAI(
+    api_key=GEMINI_KEY,
+    base_url="https://api.aitunnel.ru/v1/"
+)
 
 # Меню пиццерии
 MENU = {
@@ -162,7 +165,7 @@ async def order_quantity(message: Message, state: FSMContext):
     await state.clear()
 
 
-# === ОБЫЧНЫЙ РЕЖИМ — ИИ ===
+# === ОБЫЧНЫЙ РЕЖИМ — ИИ (через AITunnel, OpenAI-формат) ===
 @dp.message()
 async def smart_answer(message: Message):
     text = message.text.lower()
@@ -180,12 +183,14 @@ async def smart_answer(message: Message):
         "Отвечай коротко и аппетитно."
     )
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=message.text,
-            config={"system_instruction": system_prompt}
+        response = client.chat.completions.create(
+            model="gemini-2.5-flash-lite-preview-09-2025",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message.text},
+            ],
         )
-        full = response.text
+        full = response.choices[0].message.content
         for i in range(0, len(full), 4000):
             await message.answer(full[i:i+4000])
     except Exception as e:
